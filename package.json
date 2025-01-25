@@ -1,0 +1,62 @@
+{
+  "name": "post-haste",
+  "version": "1.0.0",
+  "description": "Quick WordPress post publisher",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "cross-env NODE_ENV=production electron .",
+    "dev:webpack": "cross-env NODE_ENV=development webpack serve --config webpack.config.js",
+    "dev:electron": "wait-on tcp:3000 && cross-env NODE_ENV=development electron .",
+    "dev": "concurrently -k \"npm run dev:webpack\" \"npm run dev:electron\"",
+    "build": "cross-env NODE_ENV=production webpack --config webpack.config.js"
+  },
+  "keywords": [
+    "wordpress",
+    "menubar",
+    "electron",
+    "macos"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@emotion/react": "^11.11.3",
+    "@emotion/styled": "^11.11.0",
+    "@radix-ui/react-dialog": "^1.0.5",
+    "@radix-ui/react-label": "^2.0.2",
+    "@radix-ui/react-slot": "^1.0.2",
+    "@radix-ui/react-switch": "^1.0.3",
+    "@radix-ui/react-toast": "^1.1.5",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
+    "electron-store": "^8.1.0",
+    "keytar": "^7.9.0",
+    "lucide-react": "^0.309.0",
+    "node-notifier": "^10.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^7.1.3",
+    "tailwind-merge": "^2.2.0",
+    "tailwindcss-animate": "^1.0.7",
+    "wpapi": "^1.2.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.7",
+    "@babel/preset-env": "^7.23.7",
+    "@babel/preset-react": "^7.23.7",
+    "autoprefixer": "^10.4.16",
+    "babel-loader": "^9.1.3",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "css-loader": "^6.9.0",
+    "electron": "^28.1.0",
+    "html-webpack-plugin": "^5.6.0",
+    "postcss": "^8.4.33",
+    "postcss-loader": "^7.3.4",
+    "style-loader": "^3.3.4",
+    "tailwindcss": "^3.4.1",
+    "wait-on": "^7.2.0",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1"
+  }
+}
