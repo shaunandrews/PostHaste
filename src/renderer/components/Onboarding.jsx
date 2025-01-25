@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Button } from './ui/button';
+import { Input } from './ui/Input';
+import { Label } from './ui/Label';
+import { Button } from './ui/Button';
 import { wordPressService } from '../services/wordpress';
 
 const { ipcRenderer } = window.require('electron');

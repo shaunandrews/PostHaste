@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Button } from './ui/button';
-import { Textarea } from './ui/textarea';
+import { Button } from './ui/Button';
+import { Textarea } from './ui/Textarea';
 import { wordPressService } from '../services/wordpress';
 
 const { ipcRenderer } = window.require('electron');

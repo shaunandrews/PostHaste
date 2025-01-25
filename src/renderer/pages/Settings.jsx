@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Button } from '../components/ui/button';
-import { Switch } from '../components/ui/switch';
-import { useToast } from '../hooks/use-toast';
+import { Input } from '../components/ui/Input';
+import { Label } from '../components/ui/Label';
+import { Button } from '../components/ui/Button';
+import { Switch } from '../components/ui/Switch';
 import { wordPressService } from '../services/wordpress';
 
 const { ipcRenderer } = window.require('electron');
@@ -11,7 +10,6 @@ const Store = window.require('electron-store');
 const store = new Store();
 
 export default function Settings() {
-  const { toast } = useToast();
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [formData, setFormData] = useState({
     blogUrl: '',
@@ -49,16 +47,9 @@ export default function Settings() {
     try {
       setIsTestingConnection(true);
       await wordPressService.testConnection();
-      toast({
-        title: "Success",
-        description: "Successfully connected to WordPress!"
-      });
+      console.log("Success: Successfully connected to WordPress!");
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
+      console.error("Error:", error.message);
     } finally {
       setIsTestingConnection(false);
     }
@@ -83,16 +74,9 @@ export default function Settings() {
         setFormData(prev => ({ ...prev, password: '' }));
       }
 
-      toast({
-        title: "Success",
-        description: "Settings saved successfully!"
-      });
+      console.log("Success: Settings saved successfully!");
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Error saving settings: " + error.message,
-        variant: "destructive"
-      });
+      console.error("Error saving settings:", error.message);
     }
   };
 
