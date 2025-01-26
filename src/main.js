@@ -6,11 +6,16 @@ const {
   nativeImage,
   ipcMain,
   screen,
+  Notification,
+  systemPreferences,
 } = require("electron");
 const path = require("path");
 const Store = require("electron-store");
 const keytar = require("keytar");
 const notifier = require("node-notifier");
+
+// Disable security warnings in development
+process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = true;
 
 // Initialize store for app settings
 const store = new Store();
@@ -18,6 +23,7 @@ const store = new Store();
 let tray = null;
 let mainWindow = null;
 let settingsWindow = null;
+let reminderInterval = null;
 
 // Service name for keytar
 const SERVICE_NAME = "post-haste-wp";
@@ -52,12 +58,29 @@ function registerIpcHandlers() {
     }
   });
 
+  ipcMain.handle("delete-credentials", async (event, username) => {
+    try {
+      await keytar.deletePassword(SERVICE_NAME, username);
+      return true;
+    } catch (error) {
+      console.error("Error deleting credentials:", error);
+      throw error;
+    }
+  });
+
   // IPC handler for opening settings window
   ipcMain.handle("open-settings", () => {
     if (settingsWindow) {
       settingsWindow.focus();
     } else {
       createSettingsWindow();
+    }
+  });
+
+  // IPC handler for closing settings window
+  ipcMain.handle("close-settings", () => {
+    if (settingsWindow) {
+      settingsWindow.close();
     }
   });
 
@@ -81,20 +104,59 @@ function registerIpcHandlers() {
       throw error;
     }
   });
+
+  // IPC handler for updating window height
+  ipcMain.handle("update-window-height", async (event, height) => {
+    try {
+      if (mainWindow) {
+        const [width] = mainWindow.getSize();
+        mainWindow.setSize(width, Math.max(240, height));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error updating window height:", error);
+      throw error;
+    }
+  });
+
+  // Add IPC handler for reminder settings changes
+  ipcMain.handle("update-reminder-settings", async () => {
+    startReminderSystem();
+  });
+
+  // Add IPC handler for notification permission request
+  ipcMain.handle("request-notification-permission", async () => {
+    // On macOS, we need to check if the app has notification permissions
+    if (process.platform === "darwin") {
+      // Create a test notification to trigger the permission request
+      const notification = new Notification({
+        title: "PostHaste",
+        body: "Thanks for enabling notifications!",
+      });
+      notification.show();
+      return true;
+    }
+
+    // On Windows and Linux, notifications are enabled by default
+    return true;
+  });
 }
 
 function createWindow() {
   console.log("Creating main window...");
   mainWindow = new BrowserWindow({
     width: 480,
-    height: 200,
+    height: 220,
     show: false,
     frame: false,
     fullscreenable: false,
-    resizable: true,
+    resizable: false,
+    minHeight: 220,
+    maxHeight: 800,
+    enableLargerThanScreen: false,
     skipTaskbar: true,
-    minHeight: 200,
-    maxHeight: Math.round(screen.getPrimaryDisplay().workAreaSize.height * 0.8),
+    movable: true,
     alwaysOnTop: store.get("keepOnTop", false),
     webPreferences: {
       nodeIntegration: true,
@@ -193,7 +255,7 @@ function createTray() {
     if (mainWindow.isVisible()) {
       mainWindow.hide();
     } else {
-      mainWindow.setPosition(Math.round(x - 240), Math.round(yPosition));
+      mainWindow.setPosition(Math.round(x - 220), Math.round(yPosition));
       mainWindow.show();
     }
   });
@@ -204,7 +266,7 @@ function createSettingsWindow() {
     width: 800,
     height: 600,
     show: true,
-    frame: true,
+    frame: false,
     fullscreenable: false,
     resizable: false,
     title: "Post Haste Settings",
@@ -229,32 +291,56 @@ function createSettingsWindow() {
   });
 }
 
-// Reminder notification
-function scheduleReminder() {
-  const enabled = store.get("enableReminders", false);
-  const time = store.get("reminderTime", "09:00");
+function startReminderSystem() {
+  // Clear any existing interval
+  if (reminderInterval) {
+    clearInterval(reminderInterval);
+  }
 
-  if (enabled) {
-    const [hours, minutes] = time.split(":");
-    const now = new Date();
-    const reminderTime = new Date();
-    reminderTime.setHours(parseInt(hours), parseInt(minutes), 0);
+  const isEnabled = store.get("enableReminders", false);
+  const frequency = store.get("reminderFrequency", 30);
 
-    if (reminderTime < now) {
-      reminderTime.setDate(reminderTime.getDate() + 1);
+  if (!isEnabled) {
+    return;
+  }
+
+  // Convert minutes to milliseconds
+  const interval = frequency * 60 * 1000;
+
+  reminderInterval = setInterval(() => {
+    // Don't show notification if the editor is already open
+    if (mainWindow && mainWindow.isVisible()) {
+      return;
     }
 
-    const delay = reminderTime - now;
-    setTimeout(() => {
-      notifier.notify({
-        title: "Post Haste",
-        message: "Time to write a new post!",
-        sound: true,
+    notifier.notify(
+      {
+        title: "Time to Write!",
+        message: "Click here to start writing a new post",
+        icon: path.join(__dirname, "assets", "icon.png"),
+        timeout: 30,
         wait: true,
-      });
-      scheduleReminder(); // Schedule next reminder
-    }, delay);
-  }
+        appID: "PostHaste", // Set the app identifier
+        sound: true, // Enable notification sound
+      },
+      function (err, response, metadata) {
+        // If user clicked the notification, show the editor
+        if (response === "activate") {
+          if (!mainWindow) {
+            createWindow();
+          }
+          // Position window in the center of the screen
+          const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+          const [winWidth, winHeight] = mainWindow.getSize();
+          mainWindow.setPosition(
+            Math.round((width - winWidth) / 2),
+            Math.round((height - winHeight) / 2)
+          );
+          mainWindow.show();
+        }
+      }
+    );
+  }, interval);
 }
 
 // Initialize app
@@ -262,7 +348,7 @@ app.whenReady().then(() => {
   registerIpcHandlers();
   createWindow();
   createTray();
-  scheduleReminder();
+  startReminderSystem(); // Start the reminder system when app is ready
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -276,5 +362,3 @@ app.on("window-all-closed", () => {
     app.quit();
   }
 });
-
-// IPC handlers for WordPress interactions will go here

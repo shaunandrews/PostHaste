@@ -16,6 +16,17 @@ class WordPressService {
         throw new Error("Blog URL not configured");
       }
 
+      // Ensure URL has protocol
+      const normalizedUrl =
+        blogUrl.startsWith("http://") || blogUrl.startsWith("https://")
+          ? blogUrl
+          : `https://${blogUrl}`;
+
+      console.log(
+        "Initializing WordPress API with endpoint:",
+        `${normalizedUrl}/wp-json`
+      );
+
       const credentials = await ipcRenderer.invoke("get-credentials");
       if (!credentials?.username || !credentials?.password) {
         throw new Error("WordPress credentials not found");
@@ -23,7 +34,7 @@ class WordPressService {
 
       // Create a new WPAPI instance
       this.wp = new WPAPI({
-        endpoint: `${blogUrl}/wp-json`,
+        endpoint: `${normalizedUrl}/wp-json`,
         username: credentials.username,
         password: credentials.password,
       });
@@ -32,26 +43,226 @@ class WordPressService {
       await this.wp.users().me();
       return true;
     } catch (error) {
-      console.error("WordPress API initialization failed:", error);
+      console.error("WordPress API initialization failed:", {
+        error: error.message,
+        stack: error.stack,
+        response: error.response?.status,
+        endpoint: this.wp?.toString(),
+      });
       throw error;
     }
   }
 
-  async createPost(content) {
+  async uploadMedia(file) {
     if (!this.wp) {
       await this.initialize();
     }
 
     try {
+      console.log("Starting media upload for file:", {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+      });
+
+      // Create FormData
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("title", file.name);
+      formData.append("alt_text", file.name);
+
+      // Get the WordPress site URL and credentials
+      const blogUrl = store.get("blogUrl");
+      const credentials = await ipcRenderer.invoke("get-credentials");
+
+      // Ensure URL has protocol
+      const normalizedUrl =
+        blogUrl.startsWith("http://") || blogUrl.startsWith("https://")
+          ? blogUrl
+          : `https://${blogUrl}`;
+
+      const endpoint = `${normalizedUrl}/wp-json/wp/v2/media`;
+      console.log("Uploading to endpoint:", endpoint);
+
+      // Create the authorization header
+      const authString = `${credentials.username}:${credentials.password}`;
+      const base64Auth = btoa(authString);
+
+      // Make the request directly since WPAPI doesn't handle multipart/form-data well
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${base64Auth}`,
+          Accept: "application/json",
+        },
+        body: formData,
+      });
+
+      const responseText = await response.text();
+      console.log("Raw response:", responseText);
+
+      if (!response.ok) {
+        console.error("Media upload failed:", {
+          status: response.status,
+          statusText: response.statusText,
+          response: responseText,
+          headers: Object.fromEntries(response.headers.entries()),
+          url: endpoint,
+        });
+
+        let errorMessage = `Upload failed (${response.status})`;
+        try {
+          const errorJson = JSON.parse(responseText);
+          if (errorJson.message) {
+            errorMessage += `: ${errorJson.message}`;
+          }
+        } catch (e) {
+          errorMessage += `: ${responseText}`;
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      const media = JSON.parse(responseText);
+      console.log("Media upload successful:", media);
+      return media;
+    } catch (error) {
+      console.error("Error uploading media:", {
+        error: error.message,
+        stack: error.stack,
+      });
+      throw this.handleApiError(error);
+    }
+  }
+
+  async getOrCreateTag(tagName) {
+    try {
+      // First try to find the tag
+      const existingTags = await this.wp.tags().search(tagName);
+      const matchingTag = existingTags.find(
+        (tag) => tag.name.toLowerCase() === tagName.toLowerCase()
+      );
+
+      if (matchingTag) {
+        return matchingTag.id;
+      }
+
+      // If tag doesn't exist, create it
+      const newTag = await this.wp.tags().create({
+        name: tagName,
+      });
+
+      return newTag.id;
+    } catch (error) {
+      console.error(`Error handling tag "${tagName}":`, error);
+      return null;
+    }
+  }
+
+  async createPost(content, media = null, title = "") {
+    if (!this.wp) {
+      await this.initialize();
+    }
+
+    try {
+      console.log(
+        "Attempting to create post with endpoint:",
+        this.wp.toString()
+      );
+      console.log("Using blog URL:", store.get("blogUrl"));
+
+      let postContent = content;
+
+      // Wrap the text content in a paragraph block
+      postContent = `<!-- wp:paragraph -->
+<p>${content}</p>
+<!-- /wp:paragraph -->`;
+
+      // Handle media attachments
+      if (media && (Array.isArray(media) ? media.length > 0 : media.id)) {
+        // If media is an array with multiple items, create a gallery block
+        if (Array.isArray(media) && media.length > 1) {
+          const imageIds = media.map((item) => item.id).filter(Boolean);
+          const imageSrcs = media
+            .map((item) => item.source_url)
+            .filter(Boolean);
+          const imageAlts = media.map((item) => item.alt_text || "");
+
+          if (imageIds.length > 0) {
+            const galleryBlock = `<!-- wp:gallery {"ids":[${imageIds.join(
+              ","
+            )}],"linkTo":"none"} -->
+<figure class="wp-block-gallery has-nested-images columns-default is-cropped">
+${media
+  .map((item, index) =>
+    item.id
+      ? `
+  <figure class="wp-block-image size-large">
+    <img src="${imageSrcs[index]}" alt="${imageAlts[index]}" class="wp-image-${item.id}" />
+  </figure>`
+      : ""
+  )
+  .filter(Boolean)
+  .join("")}
+</figure>
+<!-- /wp:gallery -->`;
+
+            postContent = `${postContent}\n\n${galleryBlock}`;
+          }
+        }
+        // If it's a single image or array with one item, use the original image block format
+        else {
+          const singleMedia = Array.isArray(media) ? media[0] : media;
+          if (singleMedia && singleMedia.id) {
+            const imageBlock = `<!-- wp:image {"id":${
+              singleMedia.id
+            },"sizeSlug":"large"} -->
+<figure class="wp-block-image size-large"><img src="${
+              singleMedia.source_url
+            }" alt="${singleMedia.alt_text || ""}" class="wp-image-${
+              singleMedia.id
+            }"/></figure>
+<!-- /wp:image -->`;
+            postContent = `${postContent}\n\n${imageBlock}`;
+          }
+        }
+      }
+
+      // Get default tags from settings and convert to array
+      const defaultTags = store
+        .get("defaultTags", "")
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+
+      // Get tag IDs (create tags if they don't exist)
+      const tagIds = [];
+      if (defaultTags.length > 0) {
+        for (const tagName of defaultTags) {
+          const tagId = await this.getOrCreateTag(tagName);
+          if (tagId) {
+            tagIds.push(tagId);
+          }
+        }
+      }
+
+      // Create post with tag IDs
       const post = await this.wp.posts().create({
-        title: content.substring(0, 50) + "...",
-        content: content,
+        title: title || content.substring(0, 50) + "...",
+        content: postContent,
         status: "publish",
+        tags: tagIds.length > 0 ? tagIds : undefined,
       });
 
       return post;
     } catch (error) {
       console.error("Error creating post:", error);
+      console.error("Full error details:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        message: error.message,
+        endpoint: this.wp?.toString(),
+      });
       throw this.handleApiError(error);
     }
   }

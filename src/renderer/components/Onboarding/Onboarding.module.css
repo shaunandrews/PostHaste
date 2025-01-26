@@ -1,0 +1,12 @@
+.onboardingStep {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  gap: .75em;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2em;
+  text-align: center;
+  font-size: .8em;
+}

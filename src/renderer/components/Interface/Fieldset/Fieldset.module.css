@@ -1,0 +1,11 @@
+.fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.help {
+  font-size: 12px;
+  line-height: 1.6;
+  opacity: 0.6;
+}

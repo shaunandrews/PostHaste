@@ -1,0 +1,51 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  -webkit-app-region: drag;
+}
+
+.options {
+  flex-grow: 1;
+  display: flex;
+}
+
+.site,
+.preferences {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 32px;
+}
+
+.site > *,
+.preferences > * {
+  -webkit-app-region: no-drag;
+}
+
+.site {
+  border-right: 1px solid var(--border);
+}
+
+.siteActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.select {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background-color: var(--input-background);
+  color: var(--text);
+  font-size: 14px;
+  -webkit-app-region: no-drag;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
