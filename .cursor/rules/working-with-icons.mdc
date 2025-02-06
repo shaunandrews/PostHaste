@@ -1,0 +1,7 @@
+---
+description: Adding icons to the interface
+globs: 
+---
+Use the Lucide node package for all icons.
+
+For reference: https://lucide.dev/icons/

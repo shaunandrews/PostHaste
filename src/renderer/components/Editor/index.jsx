@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "../Interface/Button";
 import { ImagePicker } from "../Interface/ImagePicker";
-import { Settings } from "iconoir-react";
+import { Settings, Bold, Italic } from "lucide-react";
 import { wordPressService } from "../../services/wordpress";
 import { Canvas } from "./Canvas";
 import { PostTitle } from "./PostTitle";
@@ -21,8 +21,10 @@ export function Editor({ onError, onSuccess, onCredentialsReset }) {
     store.get("showTitleField", true)
   );
   const [errorMessage, setErrorMessage] = useState("");
+  const [hasSelection, setHasSelection] = useState(false);
   const containerRef = useRef(null);
   const fileInputRef = useRef(null);
+  const canvasRef = useRef(null);
 
   useEffect(() => {
     // Watch for changes to the showTitleField setting
@@ -107,6 +109,60 @@ export function Editor({ onError, onSuccess, onCredentialsReset }) {
     setTitle(e.target.value);
   };
 
+  const handleSelectionChange = (hasSelection) => {
+    setHasSelection(hasSelection);
+  };
+
+  const isFormatActive = (command) => {
+    try {
+      return document.queryCommandState(command);
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const formatText = (command) => {
+    document.execCommand(command, false, null);
+    // Force a re-render of the FormatButtons
+    setHasSelection(true);
+  };
+
+  const FormatButtons = () => {
+    const [, forceUpdate] = useState({});
+
+    useEffect(() => {
+      // Set up an interval to check formatting state
+      const interval = setInterval(() => {
+        if (hasSelection) {
+          forceUpdate({});
+        }
+      }, 100);
+
+      return () => clearInterval(interval);
+    }, [hasSelection]);
+
+    if (!hasSelection) return null;
+
+    return (
+      <>
+        <Button
+          icon={Bold}
+          onClick={() => formatText("bold")}
+          variant={isFormatActive("bold") ? "primary" : "default"}
+        >
+          Bold
+        </Button>
+        <Button
+          icon={Italic}
+          onClick={() => formatText("italic")}
+          variant={isFormatActive("italic") ? "primary" : "default"}
+        >
+          Italic
+        </Button>
+      </>
+    );
+  };
+
   const handleImageSelect = (files) => {
     setSelectedImages((prev) => [...prev, ...files]);
     const newPreviews = files.map((file) => URL.createObjectURL(file));
@@ -176,7 +232,12 @@ export function Editor({ onError, onSuccess, onCredentialsReset }) {
         <PostTitle title={title} onChange={handleTitleChange} />
       )}
 
-      <Canvas content={content} onChange={handleContentChange} />
+      <Canvas
+        ref={canvasRef}
+        content={content}
+        onChange={handleContentChange}
+        onSelectionChange={handleSelectionChange}
+      />
 
       {errorMessage && <div className={styles.error}>{errorMessage}</div>}
 
@@ -188,6 +249,7 @@ export function Editor({ onError, onSuccess, onCredentialsReset }) {
             onImageRemove={handleImageRemove}
             fileInputRef={fileInputRef}
           />
+          <FormatButtons />
         </div>
 
         <div className={styles.rightActions}>
