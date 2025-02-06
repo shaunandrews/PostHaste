@@ -1,0 +1,12 @@
+.toggle {
+  position: relative;
+}
+
+.toggle.active {
+  opacity: 1;
+}
+
+.toggle.active:hover {
+  opacity: 1;
+  background-color: var(--primary);
+}

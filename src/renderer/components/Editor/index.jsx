@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "../Interface/Button";
+import { ButtonToggle } from "../Interface/ButtonToggle";
 import { ImagePicker } from "../Interface/ImagePicker";
 import { Settings, Bold, Italic } from "lucide-react";
 import { wordPressService } from "../../services/wordpress";
@@ -123,8 +124,6 @@ export function Editor({ onError, onSuccess, onCredentialsReset }) {
 
   const formatText = (command) => {
     document.execCommand(command, false, null);
-    // Force a re-render of the FormatButtons
-    setHasSelection(true);
   };
 
   const FormatButtons = () => {
@@ -145,20 +144,20 @@ export function Editor({ onError, onSuccess, onCredentialsReset }) {
 
     return (
       <>
-        <Button
+        <ButtonToggle
           icon={Bold}
           onClick={() => formatText("bold")}
-          variant={isFormatActive("bold") ? "primary" : "default"}
+          isActive={isFormatActive("bold")}
         >
           Bold
-        </Button>
-        <Button
+        </ButtonToggle>
+        <ButtonToggle
           icon={Italic}
           onClick={() => formatText("italic")}
-          variant={isFormatActive("italic") ? "primary" : "default"}
+          isActive={isFormatActive("italic")}
         >
           Italic
-        </Button>
+        </ButtonToggle>
       </>
     );
   };
