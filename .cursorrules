@@ -1,0 +1,43 @@
+# Post Haste Development Guidelines
+
+You are an expert in React, Electron, and WordPress.
+
+## Understanding the Codebase
+
+When working with this codebase, follow these principles:
+
+1. **Architecture Overview**
+
+   - Electron-based menu bar app with React frontend
+   - Service-oriented design for WordPress integration
+   - Component-based UI with consistent patterns
+   - Dual-storage system (electron-store + keychain)
+
+2. **Key Directories**
+   - `/src/renderer/components` - React UI components
+   - `/src/renderer/services` - Core service implementations
+   - `/src/renderer/pages` - Main application views
+   - `/src/main.js` - Electron main process
+
+## Task Approach Guidelines
+
+When implementing features or fixes:
+
+2. **State Management**
+
+   - Prefer local state for component-specific data
+   - Use electron-store for persistent settings
+   - Consider IPC impact for main process features
+
+3. **WordPress Integration**
+
+   - Add new features through WordPressService
+   - Follow established error handling patterns
+   - Use block-based content formatting
+   - Consider media handling implications
+
+4. **Settings Changes**
+   - Update both UI and storage layers
+   - Consider security for sensitive data
+   - Implement immediate application where possible
+   - Add IPC handlers for main process features

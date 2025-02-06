@@ -24,6 +24,7 @@ let tray = null;
 let mainWindow = null;
 let settingsWindow = null;
 let reminderInterval = null;
+let onboardingWindow = null;
 
 // Service name for keytar
 const SERVICE_NAME = "post-haste-wp";
@@ -110,7 +111,7 @@ function registerIpcHandlers() {
     try {
       if (mainWindow) {
         const [width] = mainWindow.getSize();
-        mainWindow.setSize(width, Math.max(240, height));
+        mainWindow.setSize(width, Math.max(180, height));
         return true;
       }
       return false;
@@ -141,18 +142,30 @@ function registerIpcHandlers() {
     // On Windows and Linux, notifications are enabled by default
     return true;
   });
+
+  // Add IPC handler for completing onboarding
+  ipcMain.handle("complete-onboarding", async () => {
+    if (onboardingWindow) {
+      onboardingWindow.close();
+    }
+    store.set("onboardingComplete", true);
+    if (!mainWindow) {
+      createWindow();
+    }
+    createTray();
+  });
 }
 
 function createWindow() {
   console.log("Creating main window...");
   mainWindow = new BrowserWindow({
     width: 480,
-    height: 220,
+    height: 180,
     show: false,
     frame: false,
     fullscreenable: false,
     resizable: false,
-    minHeight: 220,
+    minHeight: 180,
     maxHeight: 800,
     enableLargerThanScreen: false,
     skipTaskbar: true,
@@ -263,10 +276,10 @@ function createTray() {
 
 function createSettingsWindow() {
   settingsWindow = new BrowserWindow({
-    width: 800,
+    width: 400,
     height: 600,
     show: true,
-    frame: false,
+    frame: true,
     fullscreenable: false,
     resizable: false,
     title: "Post Haste Settings",
@@ -288,6 +301,36 @@ function createSettingsWindow() {
 
   settingsWindow.on("closed", () => {
     settingsWindow = null;
+  });
+}
+
+function createOnboardingWindow() {
+  onboardingWindow = new BrowserWindow({
+    width: 600,
+    height: 500,
+    show: true,
+    frame: true,
+    fullscreenable: false,
+    resizable: false,
+    title: "Welcome to Post Haste",
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+      webSecurity: process.env.NODE_ENV === "production",
+    },
+  });
+
+  const loadURL =
+    process.env.NODE_ENV === "development"
+      ? "http://localhost:3000/#/onboarding"
+      : `file://${path.join(__dirname, "../dist/index.html")}#/onboarding`;
+
+  onboardingWindow.loadURL(loadURL).catch((err) => {
+    console.error("Failed to load onboarding window:", err);
+  });
+
+  onboardingWindow.on("closed", () => {
+    onboardingWindow = null;
   });
 }
 
@@ -346,13 +389,26 @@ function startReminderSystem() {
 // Initialize app
 app.whenReady().then(() => {
   registerIpcHandlers();
-  createWindow();
-  createTray();
-  startReminderSystem(); // Start the reminder system when app is ready
+
+  // Check if onboarding is needed
+  const onboardingComplete = store.get("onboardingComplete", false);
+  const hasCredentials = store.has("username") && store.has("blogUrl");
+
+  if (!onboardingComplete || !hasCredentials) {
+    createOnboardingWindow();
+  } else {
+    createWindow();
+    createTray();
+    startReminderSystem();
+  }
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      if (!onboardingComplete || !hasCredentials) {
+        createOnboardingWindow();
+      } else {
+        createWindow();
+      }
     }
   });
 });

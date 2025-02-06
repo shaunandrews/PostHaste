@@ -1,0 +1,13 @@
+---
+description: Creating or editing components.
+globs: 
+---
+All components should live within the /src/renderer/components folder.
+
+Components in the Interface folder are for primitives like Button, Input, Label, etc.
+
+Each component should exist within it's own folder.
+
+Every component folder must have a README.md file. If editing a component without a README.md file, create one.
+
+Component README.md files should aim to describe the purpose and intended usage of the componenet. Avoid code examples, and focus on concepts and usage.

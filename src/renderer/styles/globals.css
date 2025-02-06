@@ -36,11 +36,17 @@
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
+
+  --font-size-s: 12px;
+  --font-size-m: 14px;
+  --font-size-l: 16px;
+  --font-size-xl: 18px;
+  --font-size-xxl: 20px;
 }
 
 /* Body */
 body {
-  font-size: 16px;
+  font-size: var(--font-size-m);
   font-family: var(--font-family);
   background-color: var(--background);
   color: var(--foreground);

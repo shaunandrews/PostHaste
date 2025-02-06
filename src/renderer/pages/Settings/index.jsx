@@ -23,6 +23,10 @@ const REMINDER_FREQUENCIES = [
 
 export default function Settings() {
   const [isTestingConnection, setIsTestingConnection] = useState(false);
+  const [isEditingCredentials, setIsEditingCredentials] = useState(false);
+  const [originalData, setOriginalData] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState(null);
+  const [siteIcon, setSiteIcon] = useState(null);
   const [formData, setFormData] = useState({
     blogUrl: '',
     username: '',
@@ -39,7 +43,7 @@ export default function Settings() {
   }, []);
 
   const loadSettings = () => {
-    setFormData({
+    const settings = {
       blogUrl: store.get('blogUrl', ''),
       username: store.get('username', ''),
       password: '',
@@ -48,7 +52,15 @@ export default function Settings() {
       keepOnTop: store.get('keepOnTop', false),
       showTitleField: store.get('showTitleField', true),
       defaultTags: store.get('defaultTags', '')
-    });
+    };
+    setFormData(settings);
+    setOriginalData(settings);
+    
+    // Load cached site icon
+    const cachedIcon = store.get('siteIcon');
+    if (cachedIcon) {
+      setSiteIcon(cachedIcon);
+    }
   };
 
   const handleChange = (e) => {
@@ -62,9 +74,22 @@ export default function Settings() {
   const testConnection = async () => {
     try {
       setIsTestingConnection(true);
+      setConnectionStatus(null);
       await wordPressService.testConnection();
+      
+      // After successful connection, try to get the site icon
+      const iconUrl = await wordPressService.getSiteIcon();
+      setSiteIcon(iconUrl);
+      
+      setConnectionStatus('success');
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setConnectionStatus(null);
+      }, 3000);
+      
       console.log("Success: Successfully connected to WordPress!");
     } catch (error) {
+      setConnectionStatus('error');
       console.error("Error:", error.message);
     } finally {
       setIsTestingConnection(false);
@@ -76,6 +101,8 @@ export default function Settings() {
       // Clear electron-store values
       store.delete('blogUrl');
       store.delete('username');
+      store.delete('siteIcon');
+      setSiteIcon(null);
       
       // Clear keychain password
       const username = store.get('username');
@@ -97,21 +124,61 @@ export default function Settings() {
     }
   };
 
+  const handleReminderToggle = async (checked) => {
+    if (checked) {
+      // Request notification permissions if enabling for the first time
+      const result = await ipcRenderer.invoke('request-notification-permission');
+      if (!result) {
+        // If permission denied, don't enable reminders
+        return;
+      }
+    }
+    
+    // Update state and save immediately
+    setFormData(prev => ({ ...prev, enableReminders: checked }));
+    store.set('enableReminders', checked);
+    await ipcRenderer.invoke('update-reminder-settings');
+  };
+
+  const handleReminderFrequencyChange = async (e) => {
+    const { value } = e.target;
+    // Update state and save immediately
+    setFormData(prev => ({ ...prev, reminderFrequency: value }));
+    store.set('reminderFrequency', value);
+    await ipcRenderer.invoke('update-reminder-settings');
+  };
+
+  const handleEdit = () => {
+    setIsEditingCredentials(true);
+    setOriginalData(formData);
+    setConnectionStatus(null);
+  };
+
+  const handleCancel = () => {
+    setIsEditingCredentials(false);
+    setConnectionStatus(null);
+    loadSettings(); // Reset any unsaved changes
+  };
+
+  const hasChanges = () => {
+    if (!originalData) return false;
+    return (
+      formData.blogUrl !== originalData.blogUrl ||
+      formData.username !== originalData.username ||
+      formData.password !== '' // Any password input is considered a change
+    );
+  };
+
   const handleSave = async () => {
     try {
       store.set('blogUrl', formData.blogUrl);
       store.set('username', formData.username);
-      store.set('enableReminders', formData.enableReminders);
-      store.set('reminderFrequency', formData.reminderFrequency);
       store.set('keepOnTop', formData.keepOnTop);
       store.set('showTitleField', formData.showTitleField);
       store.set('defaultTags', formData.defaultTags);
 
       // Update window behavior immediately
       await ipcRenderer.invoke('set-always-on-top', formData.keepOnTop);
-
-      // Update reminder system
-      await ipcRenderer.invoke('update-reminder-settings');
 
       if (formData.password) {
         await ipcRenderer.invoke('save-credentials', {
@@ -121,6 +188,7 @@ export default function Settings() {
         setFormData(prev => ({ ...prev, password: '' }));
       }
 
+      setIsEditingCredentials(false);
       console.log("Success: Settings saved successfully!");
       
       // Close the settings window
@@ -135,71 +203,122 @@ export default function Settings() {
       <div className={styles.options}>
         <div className={styles.site}>
           <h3>WordPress Connection</h3>
-          <Fieldset
-            id="blogUrl"
-            label="Site"
-          >
-            <Input
-              type="url"
-              id="blogUrl"
-              name="blogUrl"
-              icon={<Internet />}
-              value={formData.blogUrl}
-              onChange={handleChange}
-              placeholder="https://yourblog.com"
-            />
-          </Fieldset>
-
-          <Fieldset
-            id="username"
-            label="Username"
-          >
-            <Input
-              type="text"
-              id="username"
-              name="username"
-              icon={<PeopleTag />}
-              value={formData.username}
-              onChange={handleChange}
-            />
-          </Fieldset>
-
-          <Fieldset
-            id="password"
-            label="Application password"
-            description="Go to your Wordpress → Users → Profile to create one."
-          >
-            <Input
-              type="password"
-              id="password"
-              name="password"
-              icon={<Lock />}
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="••••••••••••••••••••"
-            />
-          </Fieldset>
-    
-            <div className={styles.siteActions}>
-              <Button
-                onClick={testConnection}
-                disabled={isTestingConnection}
-              >
-                {isTestingConnection ? 'Testing...' : 'Test'}
-              </Button>
-
-              <Button
-                variant="default"
-                onClick={handleResetCredentials}
-                className={styles.resetButton}
-              >
-                Reset
-              </Button>
-
-              <Button variant="primary" onClick={handleSave}>
-                Save
-              </Button>
+          
+          {!isEditingCredentials && formData.blogUrl ? (
+            <div className={styles.siteSummary}>
+              <div className={styles.siteInfo}>
+                {siteIcon ? (
+                  <img src={siteIcon} alt="" className={styles.siteIcon} />
+                ) : (
+                  <Internet />
+                )}
+                <div>
+                  <div className={styles.siteUrl}>
+                    <span>{formData.blogUrl}</span>
+                  </div>
+                  <div className={styles.siteUser}>
+                    <PeopleTag />
+                    <span>{formData.username}</span>
+                  </div>
+                </div>
+                {connectionStatus && (
+                  <div className={`${styles.connectionStatus} ${styles[connectionStatus]}`}>
+                    {connectionStatus === 'success' ? 'Connection successful' : 'Connection failed'}
+                  </div>
+                )}
+              </div>
+              <div className={styles.siteActions}>
+                <Button onClick={handleEdit}>
+                  Edit
+                </Button>
+                <Button
+                  onClick={testConnection}
+                  disabled={isTestingConnection}
+                >
+                  {isTestingConnection ? 'Testing...' : 'Test'}
+                </Button>
+              </div>
             </div>
+          ) : (
+            <>
+              <Fieldset
+                id="blogUrl"
+                label="Site"
+              >
+                <Input
+                  type="url"
+                  id="blogUrl"
+                  name="blogUrl"
+                  icon={<Internet />}
+                  value={formData.blogUrl}
+                  onChange={handleChange}
+                  placeholder="https://yourblog.com"
+                />
+              </Fieldset>
+
+              <Fieldset
+                id="username"
+                label="Username"
+              >
+                <Input
+                  type="text"
+                  id="username"
+                  name="username"
+                  icon={<PeopleTag />}
+                  value={formData.username}
+                  onChange={handleChange}
+                />
+              </Fieldset>
+
+              <Fieldset
+                id="password"
+                label="Application password"
+                description="Go to your Wordpress → Users → Profile to create one."
+              >
+                <Input
+                  type="password"
+                  id="password"
+                  name="password"
+                  icon={<Lock />}
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="••••••••••••••••••••"
+                />
+              </Fieldset>
+        
+              <div className={styles.siteActions}>
+                <Button
+                  onClick={testConnection}
+                  disabled={isTestingConnection}
+                >
+                  {isTestingConnection ? 'Testing...' : 'Test'}
+                </Button>
+
+                <Button
+                  variant="default"
+                  onClick={handleResetCredentials}
+                  className={styles.resetButton}
+                >
+                  Reset
+                </Button>
+
+                <Button variant="default" onClick={handleCancel}>
+                  Cancel
+                </Button>
+
+                {hasChanges() && (
+                  <Button variant="primary" onClick={handleSave}>
+                    Save
+                  </Button>
+                )}
+              </div>
+              {connectionStatus && (
+                <div className={`${styles.connectionStatus} ${styles[connectionStatus]}`}>
+                  {connectionStatus === 'success' ? 'Connection successful' : 'Connection failed'}
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         <div className={styles.preferences}>
@@ -210,17 +329,7 @@ export default function Settings() {
             label="Enable reminders"
             description="Get reminded to write a new post periodically"
             checked={formData.enableReminders}
-            onCheckedChange={async (checked) => {
-              if (checked) {
-                // Request notification permissions if enabling for the first time
-                const result = await ipcRenderer.invoke('request-notification-permission');
-                if (!result) {
-                  // If permission denied, don't enable reminders
-                  return;
-                }
-              }
-              setFormData(prev => ({ ...prev, enableReminders: checked }));
-            }}
+            onCheckedChange={handleReminderToggle}
           />
 
           {formData.enableReminders && (
@@ -233,7 +342,7 @@ export default function Settings() {
                 id="reminderFrequency"
                 name="reminderFrequency"
                 value={formData.reminderFrequency}
-                onChange={handleChange}
+                onChange={handleReminderFrequencyChange}
                 className={styles.select}
               >
                 {REMINDER_FREQUENCIES.map(({ value, label }) => (
@@ -244,21 +353,6 @@ export default function Settings() {
               </select>
             </Fieldset>
           )}
-
-          <Fieldset
-            id="defaultTags"
-            label="Default tags"
-            description="Comma-separated tags to add to all posts (e.g. PostHaste, Quick Post)"
-          >
-            <Input
-              type="text"
-              id="defaultTags"
-              name="defaultTags"
-              value={formData.defaultTags}
-              onChange={handleChange}
-              placeholder="tag1, tag2, tag3"
-            />
-          </Fieldset>
 
           <FieldsetSwitch
             id="keepOnTop"
@@ -282,6 +376,21 @@ export default function Settings() {
               store.set('showTitleField', checked);
             }}
           />
+
+          <Fieldset
+            id="defaultTags"
+            label="Default tags"
+            description="Comma-separated tags to add to all posts (e.g. PostHaste, Quick Post)"
+          >
+            <Input
+              type="text"
+              id="defaultTags"
+              name="defaultTags"
+              value={formData.defaultTags}
+              onChange={handleChange}
+              placeholder="tag1, tag2, tag3"
+            />
+          </Fieldset>
         </div>
       </div>
     </div>

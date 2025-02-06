@@ -277,6 +277,67 @@ ${media
     }
   }
 
+  async getSiteIcon() {
+    try {
+      if (!this.wp) {
+        await this.initialize();
+      }
+
+      const blogUrl = store.get("blogUrl");
+      if (!blogUrl) {
+        throw new Error("Blog URL not configured");
+      }
+
+      // First check if we have a cached icon
+      const cachedIcon = store.get("siteIcon");
+      if (cachedIcon) {
+        // Verify the icon is still accessible
+        try {
+          const response = await fetch(cachedIcon);
+          if (response.ok) {
+            return cachedIcon;
+          }
+        } catch (e) {
+          // Icon not accessible, continue to fetch new one
+        }
+      }
+
+      // Ensure URL has protocol
+      const normalizedUrl =
+        blogUrl.startsWith("http://") || blogUrl.startsWith("https://")
+          ? blogUrl
+          : `https://${blogUrl}`;
+
+      // First try to get the site icon from the REST API
+      const response = await fetch(`${normalizedUrl}/wp-json/`);
+      const siteData = await response.json();
+
+      let iconUrl = null;
+      if (siteData?.site_icon_url) {
+        iconUrl = siteData.site_icon_url;
+      } else {
+        // If no site icon in REST API, try to fetch the favicon
+        const faviconUrl = `${normalizedUrl}/favicon.ico`;
+        const faviconResponse = await fetch(faviconUrl);
+        if (faviconResponse.ok) {
+          iconUrl = faviconUrl;
+        }
+      }
+
+      // Store the icon URL if we found one
+      if (iconUrl) {
+        store.set("siteIcon", iconUrl);
+      } else {
+        store.delete("siteIcon");
+      }
+
+      return iconUrl;
+    } catch (error) {
+      console.error("Error fetching site icon:", error);
+      return store.get("siteIcon", null); // Fall back to cached icon if fetch fails
+    }
+  }
+
   handleApiError(error) {
     if (error.response?.status === 401) {
       return new Error(
