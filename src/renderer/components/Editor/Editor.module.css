@@ -47,6 +47,17 @@
   -webkit-app-region: no-drag;
 }
 
+.canvas a {
+  color: var(--primary);
+  text-decoration: none;
+  border-bottom: 1px solid var(--primary);
+  transition: opacity 0.2s ease;
+}
+
+.canvas a:hover {
+  opacity: 0.8;
+}
+
 .canvas:empty:before {
   content: attr(data-placeholder);
   pointer-events: none;

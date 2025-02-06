@@ -1,0 +1,7 @@
+---
+description: Working with CSS stylesheets and variables
+globs: *.css
+---
+Always reference [globals.css](mdc:src/renderer/styles/globals.css) for CSS color and typography variables.
+
+Ask before adding new CSS variables.
