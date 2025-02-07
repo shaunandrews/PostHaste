@@ -34,12 +34,20 @@ import { IconName } from '../path-to-icons';
   title="Tooltip text"
 />
 
-// Custom icon size
+// Using iconSize for quick icon sizing
 <Button
   icon={IconName}
-  iconProps={{ width: 24, height: 24 }}
+  iconSize={24}
 >
   Larger Icon
+</Button>
+
+// Using iconProps for more control
+<Button
+  icon={IconName}
+  iconProps={{ width: 24, height: 24, fill: "red" }}
+>
+  Custom Icon Props
 </Button>
 ```
 
@@ -49,6 +57,7 @@ import { IconName } from '../path-to-icons';
 | ----------- | ------------------------ | --------------------------- | --------------------------------------------- |
 | `variant`   | `'default' \| 'primary'` | `'default'`                 | The visual style variant of the button        |
 | `icon`      | `Component`              | `undefined`                 | Optional icon component to display            |
+| `iconSize`  | `number`                 | `undefined`                 | Shorthand to set icon width and height        |
 | `iconProps` | `object`                 | `{ width: 20, height: 20 }` | Props passed to the icon component            |
 | `className` | `string`                 | `''`                        | Additional CSS class names                    |
 | `title`     | `string`                 | `undefined`                 | Tooltip text (required for icon-only buttons) |
@@ -62,3 +71,4 @@ All other props are passed directly to the underlying `<button>` element.
 - Icon-only buttons will use either the `title` prop or `children` as tooltip text
 - Invalid variants will fall back to the default variant with a console warning
 - The component uses CSS modules for styling
+- The `iconSize` prop is a convenient shorthand for setting both width and height of the icon. If more control is needed, use `iconProps` instead

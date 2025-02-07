@@ -42,8 +42,8 @@
 .canvas {
   flex-grow: 1;
   width: 100%;
-  outline: none;
   padding: 12px;
+  outline: none;
   -webkit-app-region: no-drag;
 }
 
@@ -106,7 +106,7 @@
 .leftActions,
 .rightActions {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 4px;
 }
 

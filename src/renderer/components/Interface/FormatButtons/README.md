@@ -1,28 +1,56 @@
 # FormatButtons
 
-A component that provides text formatting controls using toggle buttons. It's designed to work with contentEditable elements and handles the state management of text formatting options.
+A floating text formatting toolbar component that provides bold and italic formatting options. The component appears when text is selected and tracks the current formatting state of the selection.
 
-## Purpose
+## Props
 
-The FormatButtons component provides:
-
-- A collection of text formatting controls
-- Automatic state management based on text selection
-- Visual feedback for active formatting
-- Consistent spacing and layout for formatting options
+| Prop           | Type     | Required | Description                                                                                                            |
+| -------------- | -------- | -------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `hasSelection` | boolean  | Yes      | Indicates whether text is currently selected                                                                           |
+| `onFormat`     | function | Yes      | Callback function triggered when a formatting button is clicked. Receives format type ('bold' or 'italic') as argument |
 
 ## Usage
 
-FormatButtons is designed to work alongside text editing interfaces where:
+```jsx
+import { FormatButtons } from "../Interface/FormatButtons";
 
-- Text can be selected
-- Formatting can be applied to selections
-- The interface needs to reflect current text formatting
-- Multiple formatting options are needed
+function Editor() {
+  const [hasSelection, setHasSelection] = React.useState(false);
 
-The component automatically handles:
+  const handleFormat = (formatType) => {
+    document.execCommand(formatType);
+  };
 
-- Showing/hiding based on text selection
-- Checking current formatting state
-- Updating button states to match text formatting
-- Layout and spacing of formatting options
+  const handleSelectionChange = () => {
+    setHasSelection(window.getSelection().toString().length > 0);
+  };
+
+  return (
+    <div onMouseUp={handleSelectionChange}>
+      <FormatButtons hasSelection={hasSelection} onFormat={handleFormat} />
+      <div contentEditable>Select some text to format it.</div>
+    </div>
+  );
+}
+```
+
+## Styling
+
+The component uses CSS modules for styling:
+
+- `.container`: Flex container for the formatting buttons with a left border separator
+
+## Features
+
+- Automatically shows/hides based on text selection
+- Real-time formatting state tracking
+- Supports bold and italic text formatting
+- Uses Lucide React icons for consistent styling
+- Integrates with the `ButtonToggle` component for toggle state
+
+## Notes
+
+- Uses `document.queryCommandState` to track active formatting
+- Updates formatting state every 100ms while text is selected
+- Cleans up interval on component unmount
+- Renders nothing when no text is selected

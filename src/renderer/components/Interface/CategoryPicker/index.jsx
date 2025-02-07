@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, forwardRef } from "react";
 import { createPortal } from "react-dom";
-import { FolderOpen, Check, X } from "lucide-react";
+import { FolderOpen } from "lucide-react";
 import { Button } from "../Button";
 import styles from "./CategoryPicker.module.css";
 
@@ -9,8 +9,16 @@ export const CategoryPicker = forwardRef(function CategoryPicker(
   ref
 ) {
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const buttonRef = useRef(null);
+  const listRef = useRef(null);
+
+  // Handle list scrolling
+  const handleScroll = (event) => {
+    const scrollTop = event.target.scrollTop;
+    setIsScrolled(scrollTop > 0);
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -72,14 +80,7 @@ export const CategoryPicker = forwardRef(function CategoryPicker(
     if (selectedCategories.length === 1) {
       return selectedCategories[0].name;
     }
-    return (
-      <>
-        Categories
-        <span className={styles.selectedCount}>
-          {selectedCategories.length}
-        </span>
-      </>
-    );
+    return "Categories";
   };
 
   const getTooltipText = () => {
@@ -92,14 +93,26 @@ export const CategoryPicker = forwardRef(function CategoryPicker(
 
     return createPortal(
       <div className={styles.categoryDropdown}>
-        <Button
-          variant="default"
-          onClick={() => setShowDropdown(false)}
-          className={styles.closeButton}
-          icon={X}
-          title="Close"
-        />
-        <div className={styles.categoryList}>
+        <div
+          className={`${styles.header} ${
+            isScrolled ? styles.headerScrolled : ""
+          }`}
+        >
+          <h2 className={styles.heading}>Categories</h2>
+          <Button
+            variant="default"
+            onClick={() => setShowDropdown(false)}
+            className={styles.closeButton}
+            title="Close categories"
+          >
+            Done
+          </Button>
+        </div>
+        <div
+          className={styles.categoryList}
+          onScroll={handleScroll}
+          ref={listRef}
+        >
           {categories.map((category) => {
             const isSelected = selectedCategories.some(
               (cat) => cat.id === category.id
@@ -113,7 +126,6 @@ export const CategoryPicker = forwardRef(function CategoryPicker(
                 onClick={() => toggleCategory(category)}
               >
                 {category.name}
-                {isSelected && <Check size={16} />}
               </div>
             );
           })}
@@ -134,7 +146,14 @@ export const CategoryPicker = forwardRef(function CategoryPicker(
         }}
         ref={buttonRef}
         title={getTooltipText() || "Categories"}
-      />
+      >
+        {getButtonText()}
+      </Button>
+      {selectedCategories.length > 1 && (
+        <span className={styles.selectedCount}>
+          {selectedCategories.length}
+        </span>
+      )}
       {renderDropdown()}
     </div>
   );

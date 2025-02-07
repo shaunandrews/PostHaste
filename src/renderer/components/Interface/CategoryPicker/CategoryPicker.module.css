@@ -1,28 +1,76 @@
+.categorySelector {
+  position: relative;
+}
+
+.selectedCount {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border: 1px solid var(--background);
+  height: 14px;
+  width: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  font-size: 10px;
+  font-weight: var(--font-weight-bold);
+  position: absolute;
+  bottom: 4px;
+  right: 2px;
+  pointer-events: none;
+}
+
 .categoryDropdown {
   position: fixed;
   z-index: 1000;
   top: 0;
-  left: 0;
   right: 0;
   bottom: 0;
+  left: 0;
   background-color: var(--background);
   display: flex;
   flex-direction: column;
 }
 
+.header {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 4px 4px 18px;
+  background-color: var(--background);
+  border-bottom: 1px solid transparent;
+  z-index: 1001;
+  transition: border-color 0.2s ease;
+}
+
+.headerScrolled {
+  border-bottom-color: var(--border);
+}
+
+.heading {
+  font-size: var(--font-size-m);
+  font-weight: 600;
+  margin: 0;
+}
+
+.closeButton {
+  flex-shrink: 0;
+}
+
 .categoryList {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
   overflow-y: auto;
-  height: 100%;
+  padding: 0 12px 12px;
   align-content: flex-start;
 }
 
 .categoryItem {
-  flex: 0 0 calc(25% - 4px);
-  min-width: 160px;
-  padding: 8px 12px;
+  -webkit-app-region: no-drag;
+  padding: 6px 9px;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
@@ -32,38 +80,19 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  user-select: none;
+  color: var(--foreground-muted);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  font-size: var(--font-size-s);
+  font-size: var(--font-size-m);
 }
 
 .categoryItem:hover {
-  background-color: var(--accent);
-  color: var(--accent-foreground);
+  color: var(--foreground);
 }
 
 .categoryItem.selected {
-  background-color: var(--accent);
-  color: var(--accent-foreground);
-  border-color: var(--accent);
-}
-
-.categoryItem.selected:hover {
-  background-color: var(--accent-hover);
-}
-
-.selectedCount {
-  background-color: var(--accent);
-  color: var(--accent-foreground);
-  padding: 2px 6px;
-  border-radius: var(--radius);
-  font-size: 12px;
-  margin-left: 4px;
-}
-
-.closeButton {
-  position: fixed;
-  top: 12px;
-  right: 12px;
-  z-index: 1001;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
 }

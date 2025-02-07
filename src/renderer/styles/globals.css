@@ -3,8 +3,9 @@
   --background: #ffffff;
   --background-tint: rgba(0, 0, 0, 0.1);
   --foreground: #111111;
+  --foreground-muted: #666666;
   --primary: #74ac4d;
-  --primary-foreground: #ffffff;
+  --primary-foreground: #000000;
   --secondary: #e5e5e5;
   --destructive: #b11441;
   --input: #f5f5f5;
@@ -18,12 +19,10 @@
     --background: #000000;
     --background-tint: rgba(255, 255, 255, 0.1);
     --foreground: #fafafa;
-    --primary: #74ac4d;
+    --foreground-muted: #aaaaaa;
     --secondary: #222222;
-    --destructive: #b11441;
     --input: #111111;
     --border: #27272a;
-    --ring: #000fe2;
   }
 }
 

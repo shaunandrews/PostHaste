@@ -31,12 +31,14 @@ export function FormatButtons({ hasSelection, onFormat }) {
     <div className={styles.container}>
       <ButtonToggle
         icon={Bold}
+        iconSize={14}
         onClick={() => onFormat("bold")}
         isActive={isFormatActive("bold")}
         title="Bold"
       />
       <ButtonToggle
         icon={Italic}
+        iconSize={14}
         onClick={() => onFormat("italic")}
         isActive={isFormatActive("italic")}
         title="Italic"

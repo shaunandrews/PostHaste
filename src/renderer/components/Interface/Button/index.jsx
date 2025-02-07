@@ -7,6 +7,7 @@ export const Button = forwardRef(function Button(
     variant = "default",
     className = "",
     icon: Icon,
+    iconSize,
     iconProps = { width: 20, height: 20 },
     ...props
   },
@@ -28,6 +29,11 @@ export const Button = forwardRef(function Button(
     .filter(Boolean)
     .join(" ");
 
+  // If iconSize is provided, use it for both width and height
+  const finalIconProps = iconSize
+    ? { ...iconProps, width: iconSize, height: iconSize }
+    : iconProps;
+
   return (
     <button
       className={buttonClasses}
@@ -35,7 +41,7 @@ export const Button = forwardRef(function Button(
       ref={ref}
       {...props}
     >
-      {Icon && <Icon {...iconProps} className={styles.icon} />}
+      {Icon && <Icon {...finalIconProps} className={styles.icon} />}
       {!isIconOnly && children}
     </button>
   );
