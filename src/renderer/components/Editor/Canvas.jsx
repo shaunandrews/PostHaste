@@ -21,7 +21,17 @@ export const Canvas = forwardRef(
     const handleSelectionChange = () => {
       const selection = window.getSelection();
       const hasSelection = selection.rangeCount > 0 && !selection.isCollapsed;
-      onSelectionChange(hasSelection);
+
+      // Only trigger if the selection is within our canvas element
+      if (hasSelection) {
+        const range = selection.getRangeAt(0);
+        const isWithinCanvas = editorRef.current.contains(
+          range.commonAncestorContainer
+        );
+        onSelectionChange(hasSelection && isWithinCanvas);
+      } else {
+        onSelectionChange(false);
+      }
     };
 
     useEffect(() => {
@@ -32,12 +42,24 @@ export const Canvas = forwardRef(
     }, []);
 
     const isValidUrl = (string) => {
+      // First, check if it's already a valid URL
       try {
         new URL(string);
         return true;
       } catch (_) {
-        return false;
+        // If not a valid URL, check if it looks like a domain
+        const domainPattern =
+          /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+        return domainPattern.test(string);
       }
+    };
+
+    const formatUrl = (url) => {
+      // If the URL doesn't start with a protocol, add https://
+      if (!url.match(/^[a-zA-Z]+:\/\//)) {
+        return `https://${url}`;
+      }
+      return url;
     };
 
     const handlePaste = (e) => {
@@ -56,10 +78,12 @@ export const Canvas = forwardRef(
 
         // Create a link element
         const link = document.createElement("a");
-        link.href = text;
+        const formattedUrl = formatUrl(text);
+        link.href = formattedUrl;
         link.textContent = selectedText;
         link.target = "_blank";
         link.rel = "noopener noreferrer";
+        link.setAttribute("data-tooltip", formattedUrl);
 
         // Replace the selection with the link
         range.deleteContents();

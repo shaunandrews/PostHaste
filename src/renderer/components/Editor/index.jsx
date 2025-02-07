@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Button } from "../Interface/Button";
 import { ButtonToggle } from "../Interface/ButtonToggle";
 import { ImagePicker } from "../Interface/ImagePicker";
+import { FormatButtons } from "../Interface/FormatButtons";
 import { Settings, Bold, Italic } from "lucide-react";
 import { wordPressService } from "../../services/wordpress";
 import { Canvas } from "./Canvas";
@@ -126,42 +127,6 @@ export function Editor({ onError, onSuccess, onCredentialsReset }) {
     document.execCommand(command, false, null);
   };
 
-  const FormatButtons = () => {
-    const [, forceUpdate] = useState({});
-
-    useEffect(() => {
-      // Set up an interval to check formatting state
-      const interval = setInterval(() => {
-        if (hasSelection) {
-          forceUpdate({});
-        }
-      }, 100);
-
-      return () => clearInterval(interval);
-    }, [hasSelection]);
-
-    if (!hasSelection) return null;
-
-    return (
-      <>
-        <ButtonToggle
-          icon={Bold}
-          onClick={() => formatText("bold")}
-          isActive={isFormatActive("bold")}
-        >
-          Bold
-        </ButtonToggle>
-        <ButtonToggle
-          icon={Italic}
-          onClick={() => formatText("italic")}
-          isActive={isFormatActive("italic")}
-        >
-          Italic
-        </ButtonToggle>
-      </>
-    );
-  };
-
   const handleImageSelect = (files) => {
     setSelectedImages((prev) => [...prev, ...files]);
     const newPreviews = files.map((file) => URL.createObjectURL(file));
@@ -248,7 +213,7 @@ export function Editor({ onError, onSuccess, onCredentialsReset }) {
             onImageRemove={handleImageRemove}
             fileInputRef={fileInputRef}
           />
-          <FormatButtons />
+          <FormatButtons hasSelection={hasSelection} onFormat={formatText} />
         </div>
 
         <div className={styles.rightActions}>
