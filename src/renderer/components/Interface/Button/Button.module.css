@@ -16,6 +16,7 @@
   color: var(--foreground);
   border: none;
   -webkit-app-region: no-drag;
+  color: var(--primary);
 }
 
 .button:focus-visible {
@@ -38,6 +39,16 @@
 .button.primary {
   background-color: var(--primary);
   color: var(--primary-foreground);
+}
+
+.button.tertiary {
+  background-color: transparent;
+  color: var(--primary);
+}
+
+.button.tertiary:hover {
+  background-color: var(--secondary);
+  opacity: 1;
 }
 
 .iconOnly {

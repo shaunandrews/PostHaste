@@ -52,7 +52,7 @@ export function ImagePicker({
         </div>
       )}
 
-      {selectedImages.length < 3 && (
+      {selectedImages.length < 5 && (
         <Button
           variant="default"
           onClick={() => handleImageClick()}

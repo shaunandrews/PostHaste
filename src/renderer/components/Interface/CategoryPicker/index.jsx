@@ -100,7 +100,7 @@ export const CategoryPicker = forwardRef(function CategoryPicker(
         >
           <h2 className={styles.heading}>Categories</h2>
           <Button
-            variant="default"
+            variant="tertiary"
             onClick={() => setShowDropdown(false)}
             className={styles.closeButton}
             title="Close categories"

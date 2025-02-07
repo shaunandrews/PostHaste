@@ -13,7 +13,7 @@ export const Button = forwardRef(function Button(
   },
   ref
 ) {
-  if (!["default", "primary"].includes(variant)) {
+  if (!["default", "primary", "tertiary"].includes(variant)) {
     console.warn(`Unknown button variant: ${variant}. Using default.`);
     variant = "default";
   }

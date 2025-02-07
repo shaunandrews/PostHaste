@@ -10,6 +10,7 @@ export function SelectedImage({ image, onClick }) {
         onClick={onClick}
         className={styles.removeButton}
         icon={XmarkCircleSolid}
+        iconSize={28}
         aria-label="Remove image"
       />
       <img src={image} alt="Selected" />
