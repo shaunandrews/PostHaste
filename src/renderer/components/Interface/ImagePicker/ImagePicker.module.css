@@ -6,7 +6,20 @@
 
 .imageList {
   display: flex;
-  gap: 8px;
+  padding-right: 24px;
+  margin-right: 0;
+}
+
+.imageList > * {
+  margin-right: -24px;
+  transition: transform 0.2s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.imageList > *:hover {
+  transform: translateY(-4px);
+  z-index: 2;
 }
 
 .imagePreview {
@@ -16,7 +29,20 @@
   border-radius: 6px;
   overflow: hidden;
   cursor: pointer;
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
+  background: var(--background);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.imagePreview::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 6px;
+  background: linear-gradient(to right, transparent, var(--background));
+  pointer-events: none;
 }
 
 .imagePreview img {
@@ -37,6 +63,10 @@
   opacity: 0;
   color: red;
   transition: opacity 0.2s ease;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .imagePreview:hover .removeButton {

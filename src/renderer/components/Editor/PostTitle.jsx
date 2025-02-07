@@ -31,7 +31,7 @@ export function PostTitle({ title, onChange }) {
       onPaste={handlePaste}
       role="textbox"
       aria-label="Post title"
-      data-placeholder="Untitled post"
+      data-placeholder="Add a title..."
     />
   );
 } 
