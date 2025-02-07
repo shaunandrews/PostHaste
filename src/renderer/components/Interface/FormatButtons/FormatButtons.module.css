@@ -1,4 +1,7 @@
 .container {
   display: flex;
   gap: 4px;
+  padding-left: 8px;
+  margin-left: 4px;
+  border-left: 1px solid var(--border);
 }
