@@ -8,13 +8,13 @@ export const Canvas = forwardRef(
 
     useEffect(() => {
       // Keep the editor content in sync with the content prop
-      if (editorRef.current && editorRef.current.textContent !== content) {
-        editorRef.current.textContent = content;
+      if (editorRef.current && editorRef.current.innerHTML !== content) {
+        editorRef.current.innerHTML = content;
       }
     }, [content]);
 
     const handleInput = (e) => {
-      const newContent = e.target.textContent;
+      const newContent = e.target.innerHTML;
       onChange({ target: { value: newContent } });
     };
 

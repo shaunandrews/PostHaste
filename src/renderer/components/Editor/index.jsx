@@ -3,7 +3,8 @@ import { Button } from "../Interface/Button";
 import { ButtonToggle } from "../Interface/ButtonToggle";
 import { ImagePicker } from "../Interface/ImagePicker";
 import { FormatButtons } from "../Interface/FormatButtons";
-import { Settings, Bold, Italic } from "lucide-react";
+import { CategoryPicker } from "../Interface/CategoryPicker";
+import { Settings } from "lucide-react";
 import { wordPressService } from "../../services/wordpress";
 import { Canvas } from "./Canvas";
 import { PostTitle } from "./PostTitle";
@@ -24,9 +25,27 @@ export function Editor({ onError, onSuccess, onCredentialsReset }) {
   );
   const [errorMessage, setErrorMessage] = useState("");
   const [hasSelection, setHasSelection] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
   const containerRef = useRef(null);
   const fileInputRef = useRef(null);
   const canvasRef = useRef(null);
+  const categoryPickerRef = useRef(null);
+
+  useEffect(() => {
+    // Fetch categories when component mounts
+    const fetchCategories = async () => {
+      try {
+        const cats = await wordPressService.getCategories();
+        setCategories(cats);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        onError("Failed to load categories");
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     // Watch for changes to the showTitleField setting
@@ -162,16 +181,21 @@ export function Editor({ onError, onSuccess, onCredentialsReset }) {
 
       let uploadedMedia = [];
       if (selectedImages.length > 0) {
-        // Upload all images in parallel
         uploadedMedia = await Promise.all(
           selectedImages.map((image) => wordPressService.uploadMedia(image))
         );
       }
 
-      await wordPressService.createPost(content, uploadedMedia, title);
+      await wordPressService.createPost(
+        content,
+        uploadedMedia,
+        title,
+        selectedCategories.map((cat) => cat.id)
+      );
 
       setContent("");
       setTitle("");
+      setSelectedCategories([]);
       // Clean up all image previews
       imagePreviews.forEach((preview) => {
         URL.revokeObjectURL(preview);
@@ -212,6 +236,13 @@ export function Editor({ onError, onSuccess, onCredentialsReset }) {
             onImageSelect={handleImageSelect}
             onImageRemove={handleImageRemove}
             fileInputRef={fileInputRef}
+          />
+          <CategoryPicker
+            ref={categoryPickerRef}
+            categories={categories}
+            selectedCategories={selectedCategories}
+            onSelectionChange={setSelectedCategories}
+            onError={onError}
           />
           <FormatButtons hasSelection={hasSelection} onFormat={formatText} />
         </div>

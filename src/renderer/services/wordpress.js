@@ -159,7 +159,7 @@ class WordPressService {
     }
   }
 
-  async createPost(content, media = null, title = "") {
+  async createPost(content, media = null, title = "", categories = []) {
     if (!this.wp) {
       await this.initialize();
     }
@@ -173,7 +173,7 @@ class WordPressService {
 
       let postContent = content;
 
-      // Wrap the text content in a paragraph block
+      // Preserve HTML content by not modifying the content directly
       postContent = `<!-- wp:paragraph -->
 <p>${content}</p>
 <!-- /wp:paragraph -->`;
@@ -246,12 +246,13 @@ ${media
         }
       }
 
-      // Create post with tag IDs
+      // Create post with tag IDs and categories
       const post = await this.wp.posts().create({
         title: title || content.substring(0, 50) + "...",
         content: postContent,
         status: "publish",
         tags: tagIds.length > 0 ? tagIds : undefined,
+        categories: categories.length > 0 ? categories : undefined,
       });
 
       return post;
@@ -335,6 +336,37 @@ ${media
     } catch (error) {
       console.error("Error fetching site icon:", error);
       return store.get("siteIcon", null); // Fall back to cached icon if fetch fails
+    }
+  }
+
+  async getCategories() {
+    try {
+      if (!this.wp) {
+        await this.initialize();
+      }
+
+      console.log("Fetching categories from WordPress");
+
+      // Fetch all categories with their id, name, slug, and post count
+      const categories = await this.wp
+        .categories()
+        .param("per_page", 100)
+        .get();
+
+      // Transform the response to a simpler format
+      const formattedCategories = categories.map((category) => ({
+        id: category.id,
+        name: category.name,
+        slug: category.slug,
+        count: category.count,
+        parent: category.parent,
+      }));
+
+      console.log(`Found ${formattedCategories.length} categories`);
+      return formattedCategories;
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      throw this.handleApiError(error);
     }
   }
 
