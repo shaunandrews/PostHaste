@@ -10,8 +10,6 @@ export function ButtonToggle({ children, icon, isActive, onClick, ...props }) {
       onClick={onClick}
       className={`${styles.toggle} ${isActive ? styles.active : ""}`}
       {...props}
-    >
-      {children}
-    </Button>
+    />
   );
-} 
+}

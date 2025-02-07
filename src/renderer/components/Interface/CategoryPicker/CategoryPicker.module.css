@@ -1,23 +1,27 @@
-.categorySelector {
-  position: relative;
-  display: inline-block;
-}
-
 .categoryDropdown {
   position: fixed;
   z-index: 1000;
-  min-width: 200px;
-  max-width: 300px;
-  max-height: 300px;
-  overflow-y: auto;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background-color: var(--background);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.categoryList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  overflow-y: auto;
+  height: 100%;
+  align-content: flex-start;
 }
 
 .categoryItem {
+  flex: 0 0 calc(25% - 4px);
+  min-width: 160px;
   padding: 8px 12px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -28,6 +32,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: var(--font-size-s);
 }
 
 .categoryItem:hover {
@@ -38,6 +45,7 @@
 .categoryItem.selected {
   background-color: var(--accent);
   color: var(--accent-foreground);
+  border-color: var(--accent);
 }
 
 .categoryItem.selected:hover {
@@ -51,4 +59,11 @@
   border-radius: var(--radius);
   font-size: 12px;
   margin-left: 4px;
+}
+
+.closeButton {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 1001;
 }

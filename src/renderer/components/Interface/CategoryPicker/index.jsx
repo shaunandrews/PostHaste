@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, forwardRef } from "react";
-import { FolderOpen, Check } from "lucide-react";
+import { createPortal } from "react-dom";
+import { FolderOpen, Check, X } from "lucide-react";
 import { Button } from "../Button";
 import styles from "./CategoryPicker.module.css";
 
@@ -14,7 +15,11 @@ export const CategoryPicker = forwardRef(function CategoryPicker(
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (ref.current && !ref.current.contains(event.target)) {
+      if (
+        ref.current &&
+        !ref.current.contains(event.target) &&
+        !event.target.closest(`.${styles.categoryDropdown}`)
+      ) {
         setShowDropdown(false);
       }
     };
@@ -82,28 +87,19 @@ export const CategoryPicker = forwardRef(function CategoryPicker(
     return selectedCategories.map((cat) => cat.name).join(", ");
   };
 
-  return (
-    <div className={styles.categorySelector} ref={ref}>
-      <Button
-        variant="default"
-        icon={FolderOpen}
-        onClick={() => {
-          setShowDropdown(!showDropdown);
-          setTimeout(updateDropdownPosition, 0);
-        }}
-        ref={buttonRef}
-        title={getTooltipText()}
-      >
-        {getButtonText()}
-      </Button>
-      {showDropdown && categories.length > 0 && (
-        <div
-          className={styles.categoryDropdown}
-          style={{
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-          }}
-        >
+  const renderDropdown = () => {
+    if (!showDropdown || categories.length === 0) return null;
+
+    return createPortal(
+      <div className={styles.categoryDropdown}>
+        <Button
+          variant="default"
+          onClick={() => setShowDropdown(false)}
+          className={styles.closeButton}
+          icon={X}
+          title="Close"
+        />
+        <div className={styles.categoryList}>
           {categories.map((category) => {
             const isSelected = selectedCategories.some(
               (cat) => cat.id === category.id
@@ -122,7 +118,24 @@ export const CategoryPicker = forwardRef(function CategoryPicker(
             );
           })}
         </div>
-      )}
+      </div>,
+      document.body
+    );
+  };
+
+  return (
+    <div className={styles.categorySelector} ref={ref}>
+      <Button
+        variant="default"
+        icon={FolderOpen}
+        onClick={() => {
+          setShowDropdown(!showDropdown);
+          setTimeout(updateDropdownPosition, 0);
+        }}
+        ref={buttonRef}
+        title={getTooltipText() || "Categories"}
+      />
+      {renderDropdown()}
     </div>
   );
 });

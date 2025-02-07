@@ -33,16 +33,14 @@ export function FormatButtons({ hasSelection, onFormat }) {
         icon={Bold}
         onClick={() => onFormat("bold")}
         isActive={isFormatActive("bold")}
-      >
-        Bold
-      </ButtonToggle>
+        title="Bold"
+      />
       <ButtonToggle
         icon={Italic}
         onClick={() => onFormat("italic")}
         isActive={isFormatActive("italic")}
-      >
-        Italic
-      </ButtonToggle>
+        title="Italic"
+      />
     </div>
   );
 }

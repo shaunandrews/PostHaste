@@ -1,16 +1,21 @@
-import React from 'react';
-import { MediaImage } from 'iconoir-react';
-import { Button } from '../Button';
-import { SelectedImage } from './SelectedImage';
-import styles from './ImagePicker.module.css';
+import React from "react";
+import { MediaImage } from "iconoir-react";
+import { Button } from "../Button";
+import { SelectedImage } from "./SelectedImage";
+import styles from "./ImagePicker.module.css";
 
-export function ImagePicker({ selectedImages = [], onImageSelect, onImageRemove, fileInputRef }) {
+export function ImagePicker({
+  selectedImages = [],
+  onImageSelect,
+  onImageRemove,
+  fileInputRef,
+}) {
   const handleImageClick = (index) => {
-    if (typeof index === 'number') {
+    if (typeof index === "number") {
       onImageRemove(index);
       // Reset the file input value so the same file can be selected again
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     } else {
       fileInputRef.current?.click();
@@ -31,16 +36,16 @@ export function ImagePicker({ selectedImages = [], onImageSelect, onImageRemove,
         ref={fileInputRef}
         onChange={handleImageSelect}
         accept="image/jpeg,image/png,image/gif,image/webp"
-        style={{ display: 'none' }}
+        style={{ display: "none" }}
         multiple
       />
-      
+
       {selectedImages.length > 0 && (
         <div className={styles.imageList}>
           {selectedImages.map((image, index) => (
-            <SelectedImage 
+            <SelectedImage
               key={index}
-              image={image} 
+              image={image}
               onClick={() => handleImageClick(index)}
             />
           ))}
@@ -48,14 +53,15 @@ export function ImagePicker({ selectedImages = [], onImageSelect, onImageRemove,
       )}
 
       {selectedImages.length < 3 && (
-        <Button 
-          variant="default" 
+        <Button
+          variant="default"
           onClick={() => handleImageClick()}
           icon={MediaImage}
-        >
-          {selectedImages.length > 0 ? 'Add more images' : 'Select images'}
-        </Button>
+          title={
+            selectedImages.length > 0 ? "Add more images" : "Select images"
+          }
+        />
       )}
     </div>
   );
-} 
+}

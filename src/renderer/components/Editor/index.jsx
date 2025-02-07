@@ -253,9 +253,8 @@ export function Editor({ onError, onSuccess, onCredentialsReset }) {
             icon={Settings}
             onClick={handleSettingsClick}
             className={styles.settingsButton}
-          >
-            Settings
-          </Button>
+            title="Settings"
+          />
 
           <Button
             variant="primary"
