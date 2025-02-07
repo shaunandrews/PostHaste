@@ -8,7 +8,7 @@ export const Button = forwardRef(function Button(
     className = "",
     icon: Icon,
     iconSize,
-    iconProps = { width: 20, height: 20 },
+    iconProps = { width: 16, height: 16 },
     ...props
   },
   ref
